@@ -25,4 +25,4 @@ Copy / Paste Values in Excel, after importing, to de-escape back into text.
 
 Use the provided text file (_test_excel_import.txt_) to test the script.
 
-Also available on a Galaxy test server at [http://apostl.moffitt.org](http://apostl.moffitt.org).
+Also available on a Galaxy test server (web-based interface; no command line needed) at [http://apostl.moffitt.org](http://apostl.moffitt.org).
