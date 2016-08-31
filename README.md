@@ -1,6 +1,6 @@
-###Escape Excel: a tool for preventing gene symbol and accession conversion errors
+##Escape Excel: a tool for preventing gene symbol and accession conversion errors
 
-##Syntax: escape_excel.pl [options] tabDelimitedInput.txt [output.txt]
+###Syntax: escape_excel.pl [options] tabDelimitedInput.txt [output.txt]
 Options:
 
       --no-dates   Do not escape text that looks like dates
