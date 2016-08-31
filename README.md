@@ -22,3 +22,5 @@ Escapes a few extra date-like formats that Excel does not consider dates.
 Please send unhandled mis-imported field examples (other than gene symbols with 1-digit scientific notation, such as 2e4) to [Eric.Welsh@moffitt.org](mailto:Eric.Welsh@moffitt.org).
 
 Copy / Paste Values in Excel, after importing, to de-escape back into text.
+
+Use the provided text file (_test_excel_import.txt_) to test the script.
