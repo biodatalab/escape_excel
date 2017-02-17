@@ -182,7 +182,7 @@ if ($num_files == 0 || $syntax_error_flag)
     printf STDERR "Syntax: escape_excel.pl [options] tab_delimited_input.txt [output.txt]\n";
     printf STDERR "   Options:\n";
     printf STDERR "      --no-dates   Do not escape text that looks like dates\n";
-    printf STDERR "      --no-sci     Do not escape > #E (ex: 12E4) or >11 digit integers\n";
+    printf STDERR "      --no-sci     Do not escape > #E (ex: 12E4) or >11 digit integer parts\n";
     printf STDERR "      --no-zeroes  Do not escape leading zeroes (ie. 012345)\n";
     printf STDERR "      --paranoid   Escape *ALL* non-numeric text\n";
     printf STDERR "                   WARNING -- Excel can take a LONG time to import\n";
@@ -296,10 +296,10 @@ while(defined($line=<INFILE>))
               $array[$i] = sprintf "=\"%s\"", $array[$i];
           }
 
-          # Escape integer scientific notation with >= 2 digits before the E,
+          # Escape scientific notation with >= 2 digits before the E,
           #  since they are likely accessions or plate/well identifiers.
           #
-          # Also escape integers with >11 digits.
+          # Also escape numbers with >11 digits before the decimal point.
           # >11 is when it displays scientific notation in General format,
           #  which can result in corruption when saved to text.
           # >15 would be the limit at which it loses precision internally.
@@ -316,7 +316,7 @@ while(defined($line=<INFILE>))
               $temp = $array[$i];
               $temp =~ s/\,//g;
               
-              if ($temp =~ /^[1-9][0-9]{11,}$|^[0-9]{2,}[eE]/)
+              if ($temp =~ /^([1-9][0-9]{11,}|[0-9]{2,}[eE])/)
               {
                   $array[$i] = sprintf "=\"%s\"", $array[$i];
               }
@@ -341,11 +341,10 @@ while(defined($line=<INFILE>))
           {
               $array[$i] = sprintf "=\"%s\"", $array[$i];
           }
-          elsif ($array[$i] =~ /^\+/ && !($array[$i] =~ /^\+\+/))
-          {
-              $array[$i] = sprintf "=\"%s\"", $array[$i];
-          }
-          elsif ($array[$i] =~ /^\-/ && !($array[$i] =~ /^\-\-/))
+          # Excel is smart enough to treat all +/- as not an equation
+          #  but, otherwise, it will convert anything starting with +/-
+          #  into "#NAME?" as a failed invalid equation
+          elsif ($array[$i] =~ /^[+-]/ && !($array[$i] =~ /^[+-]+$/))
           {
               $array[$i] = sprintf "=\"%s\"", $array[$i];
           }
