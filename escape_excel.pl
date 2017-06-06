@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w
 
-# Copyright (c) 2016 Eric A. Welsh. All Rights Reserved.
+# Copyright (c) 2016, 2017 Eric A. Welsh. All Rights Reserved.
 #
 # Escape Excel is distributed under the following BSD-style license:
 #
@@ -27,7 +27,7 @@
 # WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
 # OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 # ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-                         
+
 
 use Scalar::Util qw(looks_like_number);
 
@@ -48,6 +48,8 @@ $date_abbrev_hash{'dec'} = 'december';
 sub is_number
 {
     # use what Perl thinks is a number first
+    # this is purely for speed, since the more complicated REGEX below should
+    #  correctly handle all numeric cases
     if (looks_like_number($_[0]))
     {
         # Perl treats infinities as numbers, Excel does not
@@ -59,13 +61,19 @@ sub is_number
         return 1;
     }
 
+    # optional + or - sign at beginning
+    # then require either:
+    #  a number followed by optional comma stuff, then optional decimal stuff
+    #  mandatory decimal, followed by optional digits
+    # then optional exponent stuff
+    #
     # Perl cannot handle American comma separators within long numbers.
     # Excel does, so we have to check for it.
     # Excel doesn't handle European dot separators, at least not when it is
     #  set to the US locale (my test environment).  I am going to leave this
     #  unsupported for now.
     #
-    return ($_[0] =~ /^([+-]?)[0-9]+(,\d\d\d)*([Ee]([+-]?[0-9]+))?$/);
+    return ($_[0] =~ /^([+-]?)([0-9]+(,[0-9]{3,})*\.?[0-9]*|\.[0-9]*)([Ee]([+-]?[0-9]+))?$/);
 }
 
 
@@ -122,7 +130,7 @@ for ($i = 0; $i < @ARGV; $i++)
 {
     $field = $ARGV[$i];
 
-    if ($field =~ /^-/)
+    if ($field =~ /^--/)
     {
         if ($field eq '--paranoid')
         {
@@ -189,6 +197,7 @@ if ($num_files == 0 || $syntax_error_flag)
     printf STDERR "                   text files where most fields are escaped.\n";
     printf STDERR "                   Copy / Paste Values can become near unusuable....\n";
     printf STDERR "\n";
+    printf STDERR "   Reads input from STDIN if filename is single - or blank.\n";
     printf STDERR "   Input file must be tab-delimited.\n";
     printf STDERR "   Fields will be stripped of existing =\"\" escapes, enclosing \"\", leading \",\n";
     printf STDERR "    and leading/trailing spaces, as they may all cause problems.\n";
