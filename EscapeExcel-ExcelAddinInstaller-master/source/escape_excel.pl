@@ -45,6 +45,32 @@ $date_abbrev_hash{'nov'} = 'november';
 $date_abbrev_hash{'dec'} = 'december';
 
 
+sub print_usage_statement
+{
+    printf STDERR "Syntax: escape_excel.pl [options] tab_delimited_input.txt [output.txt]\n";
+    printf STDERR "   Options:\n";
+    printf STDERR "      --no-dates   Do not escape text that looks like dates and/or times\n";
+    printf STDERR "      --no-sci     Do not escape > #E (ex: 12E4) or >11 digit integer parts\n";
+    printf STDERR "      --no-zeroes  Do not escape leading zeroes (ie. 012345)\n";
+    printf STDERR "      --paranoid   Escape *ALL* non-numeric text (overrides --no-dates)\n";
+    printf STDERR "                   WARNING -- Excel can take a LONG time to import\n";
+    printf STDERR "                   text files where most fields are escaped.\n";
+    printf STDERR "                   Copy / Paste Values can become near unusuable....\n";
+    printf STDERR "\n";
+    printf STDERR "   Reads input from STDIN if input file name is - or no file name is given.\n";
+    printf STDERR "   Input file must be tab-delimited.\n";
+    printf STDERR "   Fields will be stripped of existing =\"\" escapes, enclosing \"\", leading \",\n";
+    printf STDERR "    and leading/trailing spaces, as they may all cause problems.\n";
+    printf STDERR "\n";
+    printf STDERR "   Defaults to escaping most Excel mis-imported fields.\n";
+    printf STDERR "   Escapes a few extra date-like formats that Excel does not consider dates.\n";
+    printf STDERR "   Please send unhandled mis-imported field examples (other than gene symbols\n";
+    printf STDERR "    with 1-digit scientific notation, such as 2e4) to Eric.Welsh\@moffitt.org.\n";
+    printf STDERR "\n";
+    printf STDERR "   Copy / Paste Values in Excel, after importing, to de-escape back into text.\n";
+}
+
+
 sub is_number
 {
     # use what Perl thinks is a number first
@@ -187,27 +213,7 @@ if ($num_files == 0)
 # print syntax error message
 if ($num_files == 0 || $syntax_error_flag)
 {
-    printf STDERR "Syntax: escape_excel.pl [options] tab_delimited_input.txt [output.txt]\n";
-    printf STDERR "   Options:\n";
-    printf STDERR "      --no-dates   Do not escape text that looks like dates\n";
-    printf STDERR "      --no-sci     Do not escape > #E (ex: 12E4) or >11 digit integer parts\n";
-    printf STDERR "      --no-zeroes  Do not escape leading zeroes (ie. 012345)\n";
-    printf STDERR "      --paranoid   Escape *ALL* non-numeric text\n";
-    printf STDERR "                   WARNING -- Excel can take a LONG time to import\n";
-    printf STDERR "                   text files where most fields are escaped.\n";
-    printf STDERR "                   Copy / Paste Values can become near unusuable....\n";
-    printf STDERR "\n";
-    printf STDERR "   Reads input from STDIN if filename is single - or blank.\n";
-    printf STDERR "   Input file must be tab-delimited.\n";
-    printf STDERR "   Fields will be stripped of existing =\"\" escapes, enclosing \"\", leading \",\n";
-    printf STDERR "    and leading/trailing spaces, as they may all cause problems.\n";
-    printf STDERR "\n";
-    printf STDERR "   Defaults to escaping most Excel mis-imported fields.\n";
-    printf STDERR "   Escapes a few extra date-like formats that Excel does not consider dates.\n";
-    printf STDERR "   Please send unhandled mis-imported field examples (other than gene symbols\n";
-    printf STDERR "    with 1-digit scientific notation, such as 2e4) to Eric.Welsh\@moffitt.org.\n";
-    printf STDERR "\n";
-    printf STDERR "   Copy / Paste Values in Excel, after importing, to de-escape back into text.\n";
+    print_usage_statement();
     exit(1);
 }
 
@@ -220,12 +226,41 @@ if ($num_files == 1)
 # output to specified file name
 if ($num_files == 2)
 {
-    open OUTFILE, ">$outname" or die "can't open output $outname\n";
+    # do not allow output file names starting with -
+    if ($outname =~ /^-/)
+    {
+        print STDERR "ABORT -- output file names beginning with hyphens are not allowed\n";
+        print_usage_statement();
+
+        exit(1);
+    }
+
+    $temp_flag = open OUTFILE, ">$outname";
+
+    if (!$temp_flag)
+    {
+        print STDERR "ABORT -- can't open output $outname\n";
+
+        exit(3);
+    }
 }
 
 
+$temp_flag = open INFILE, "$filename";
+
+if (!$temp_flag)
+{
+    print STDERR "ABORT -- can't open input $filename\n";
+
+    if ($filename =~ /^-/)
+    {
+        print_usage_statement();
+    }
+
+    exit(2);
+}
+
 # read in, escape, and print escaped lines
-open INFILE, "$filename" or die "can't open $filename\n";
 while(defined($line=<INFILE>))
 {
     # strip newline characters
@@ -271,13 +306,15 @@ while(defined($line=<INFILE>))
                 $changed_flag = 1;
             }
 
-            # remove leading spaces, since they won't protect long numbers
+            # remove leading spaces, since they won't protect long numbers,
+            # and will cause various REGEX to fail
             if ($array[$i] =~ s/^\s+//)
             {
                 $changed_flag = 1;
             }
 
-            # remove trailing spaces, since they won't protect dates
+            # remove trailing spaces, since they won't protect dates,
+            # and will cause various REGEX to fail
             if ($array[$i] =~ s/\s+$//)
             {
                 $changed_flag = 1;
@@ -336,8 +373,8 @@ while(defined($line=<INFILE>))
         {
           $array[$i] = sprintf "=\"%s\"", $array[$i];
         }
-        # escape dates
-        elsif ($escape_dates_flag)
+        # escape only text that might be corrupted
+        else
         {
           # escape single quote at beginning of line
           if ($array[$i] =~ /^'/)
@@ -359,7 +396,7 @@ while(defined($line=<INFILE>))
           }
 
           # check for time and/or date stuff
-          else
+          elsif ($escape_dates_flag)
           {
               $time = '';
               $date = '';

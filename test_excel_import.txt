@@ -1,11 +1,53 @@
+# First block should never be escaped, since they are valid Excel numbers
+
 3.1415926535897
 -3.1415926535897
 3.14E99
 -3.14E-99
 0.12345
+0.12345E-99
 0.1234567890123456789
-5" 10'
-5" 10"
+1.
+1.E-99
+.12345
+.12345E-99
+.1234567890123456789
++.12345
+-.12345
++.12345E-99
+-.12345E-99
+1,234
+12,345
+123,456
+1,234,567
+12,345,678
+123,456,789
+1,234,567,890
+1234,567
+1234,567,8901
+1234,567,8901.E-99
+1234,567,8901.2E-99
+1
+12
+123
+1234
+12345
+123456
+1234567
+12345678
+123456789
+1234567890
+12345678901
+
+
+# Next block should only be escaped with --paranoid,
+# since they aren't numbers, and Excel doesn't try to treat them as non-text
+
+,123,456
+1,235,6
+1,235,67
+6" 2'
+6" 2"
 O00116:347
 5710 266971
 05710 266971
@@ -62,23 +104,22 @@ Sep7 -- 3:00 AM
 3:00 AM -- 01/08
 01/08 -- 3:00
 01/08 -- 3:00 AM
-1
-12
-123
-1234
-12345
-123456
-1234567
-12345678
-123456789
-1234567890
-12345678901
+-
+--
+---
++
+++
++++
++
++-
+-+
++-+
+-+-
 
-# Everything above should not be escaped, as Excel won't corrupt them.
+
 # Everything below should be escaped, either because Excel does corrupt
-#  them, or it looks suspiciously like something Excel might corrupt
-#  and I am playing it safe.
-
+# them, or it looks suspiciously like something Excel might corrupt
+# and I am playing it safe.
 00123456
 123456789012
 1234567890123
@@ -188,6 +229,17 @@ Sep7 , 3:00 AM
 3:00 AM , 01/08
 01/08 , 3:00
 01/08 , 3:00 AM
+-- sometext
+- sometext
+-sometext
+++ sometext
++ sometext
++sometext
+
+
+# Example below are also test cases for stripping various characters from the
+# original input, such as leading/trailing spaces, equals sings,
+# enclosing double quotes, and nested occurances of these
 "SEP7
 "SEP7"
 ""SEP7""
@@ -196,6 +248,7 @@ Sep7
 ="SEP7"
 ="" =" ""SEP7"" " ""
 
-# except for this one, which messes up the rest of the file when you
-# try to import it into Excel, so it has to be listed last...
+
+# This final example must be listed last, since it will cause Excel to
+# parse all lines after this line in "unexpected" ways
 "SEP7""
