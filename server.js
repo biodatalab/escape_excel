@@ -35,7 +35,7 @@ app.post("/upload", upload.single('file'), function(req, res) {
         var builder = argsBuilder(args, req.body);
         builder.enable("no-dates");
         builder.enable("no-sci");
-        builder.enable("no-zeros");
+        builder.enable("no-zeroes");
         builder.enable("paranoid");
 
         var escape = spawn("perl", args, {
