@@ -9,9 +9,9 @@ var session     = require('express-session');
 
 app.engine('html', cons.mustache);
 app.set('view engine', 'html');
-app.set('views', __dirname + '/views');
+app.set('views', __dirname + '/server/views');
 
-app.use("/static", express.static("static"));
+app.use("/static", express.static(__dirname + "/server/static"));
 
 app.get("/", function(req, res) {
     res.render("index");
@@ -35,7 +35,7 @@ app.post("/upload", upload.single('file'), function(req, res) {
         var builder = argsBuilder(args, req.body);
         builder.enable("no-dates");
         builder.enable("no-sci");
-        builder.enable("no-zeros");
+        builder.enable("no-zeroes");
         builder.enable("paranoid");
 
         var escape = spawn("perl", args, {
