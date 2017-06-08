@@ -9,9 +9,9 @@ var session     = require('express-session');
 
 app.engine('html', cons.mustache);
 app.set('view engine', 'html');
-app.set('views', __dirname + '/views');
+app.set('views', __dirname + '/server/views');
 
-app.use("/static", express.static("static"));
+app.use("/static", express.static(__dirname + "/server/static"));
 
 app.get("/", function(req, res) {
     res.render("index");
