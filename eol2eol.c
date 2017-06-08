@@ -38,6 +38,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <fcntl.h>
 
 #define TYPE_MSDOS 0x01
 #define TYPE_UNIX  0x02
@@ -137,6 +138,13 @@ int main(int argc, char *argv[])
     
     int num_files         = 0;
     char **file_list      = NULL;
+
+#ifdef WIN32
+    /* disable Windows LF -> CRLF auto-conversion */
+    setmode(fileno(stdout), O_BINARY);
+    setmode(fileno(stderr), O_BINARY);
+    setmode(fileno(stdin),  O_BINARY);
+#endif
     
     eol_type = TYPE_MSDOS;
     for (i = 1; i < argc; i++)
@@ -172,9 +180,9 @@ int main(int argc, char *argv[])
             printf("\r\n");
             printf("  -h, --help                  display this help and exit\r\n");
             printf("\r\n");
-            printf("With no FILE, or when FILE is -, read standard input.\r\n");
+            printf("With no FILE, or when FILE is -, read standard input\r\n");
             printf("\r\n");
-            printf("Report bugs to <Eric.Welsh@moffitt.org>.\r\n");
+            printf("Report bugs to <Eric.Welsh@moffitt.org>\r\n");
 
             exit(-1);
         }

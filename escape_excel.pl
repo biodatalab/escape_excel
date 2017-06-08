@@ -50,7 +50,7 @@ sub print_usage_statement
     printf STDERR "Syntax: escape_excel.pl [options] tab_delimited_input.txt [output.txt]\n";
     printf STDERR "   Options:\n";
     printf STDERR "      --no-dates   Do not escape text that looks like dates and/or times\n";
-    printf STDERR "      --no-sci     Do not escape > #E (ex: 12E4) or >11 digit integer parts\n";
+    printf STDERR "      --no-sci     Do not escape >= ##E (ex: 12E4) or >11 digit integer parts\n";
     printf STDERR "      --no-zeroes  Do not escape leading zeroes (ie. 012345)\n";
     printf STDERR "      --paranoid   Escape *ALL* non-numeric text (overrides --no-dates)\n";
     printf STDERR "                   WARNING -- Excel can take a LONG time to import\n";
