@@ -38,7 +38,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+#ifdef _WIN32    /* needed for disabling Windows LF -> CRLF auto-conversion */
+#include <io.h>
 #include <fcntl.h>
+#endif
 
 #define TYPE_MSDOS 0x01
 #define TYPE_UNIX  0x02
@@ -52,12 +56,12 @@
 char * fgets_strip_realloc(char **return_string, int *return_max_length,
                            FILE *infile)
 {
-    char c;
+    int c;
     char *string      = *return_string;
     int length        = 0;
     int total_length;
     int max_length    = *return_max_length;
-    char old_c        = '\0';
+    int old_c         = '\0';
     int anything_flag = 0;
 
     while((c = fgetc(infile)) != EOF)
@@ -81,7 +85,8 @@ char * fgets_strip_realloc(char **return_string, int *return_max_length,
         /* may be a Mac text line, back up a character */
         else if (old_c == '\r')
         {
-            fseek(infile, -1 * sizeof(char), SEEK_CUR);
+            /* fseek(infile, -1 * sizeof(char), SEEK_CUR); */
+            ungetc(c, infile);
 
             break;
         }
@@ -139,11 +144,11 @@ int main(int argc, char *argv[])
     int num_files         = 0;
     char **file_list      = NULL;
 
-#ifdef WIN32
+#ifdef _WIN32
     /* disable Windows LF -> CRLF auto-conversion */
-    setmode(fileno(stdout), O_BINARY);
-    setmode(fileno(stderr), O_BINARY);
-    setmode(fileno(stdin),  O_BINARY);
+    _setmode(fileno(stdout), O_BINARY);
+    _setmode(fileno(stderr), O_BINARY);
+    _setmode(fileno(stdin),  O_BINARY);
 #endif
     
     eol_type = TYPE_MSDOS;
