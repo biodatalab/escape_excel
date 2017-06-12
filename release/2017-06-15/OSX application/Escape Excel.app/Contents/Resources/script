@@ -1,0 +1,17 @@
+#!/usr/bin/python
+
+import os 
+import sys
+import time
+input_file = sys.argv[1]
+input_file = "'"+input_file+"'"
+tempfile = input_file.split(".")[0]+"_EOL.txt'"
+os.system("perl -pe 's/\015\012|\015/\12/g' < " + input_file + " > " + tempfile)
+
+def escape(infile):
+	cmd = 'perl ../escape_excel.pl'
+	cmd = cmd + ' ' + tempfile + ' ' + infile.split(".")[0]+"_escaped.txt'"
+	return cmd
+os.system(escape(input_file))
+time.sleep(2)
+os.system("rm " + tempfile)
