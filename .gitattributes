@@ -1,0 +1,4 @@
+# disable automatic EOL conversions on pull/push
+# this was causing all sorts of problems, especially for
+#  potential test files for the eol2eol conversion tool...
+*	text=false
