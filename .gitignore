@@ -1,1 +1,3 @@
-!setupEscapeExcel.exe
+_site
+.sass-cache
+.jekyll-metadata
