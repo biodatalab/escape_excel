@@ -1,7 +1,7 @@
 # Site settings
-title: Solo, a Jekyll Theme
-tag_text: Solo
-description: Solo is a Jekyll theme that supports single-page websites only, but supports them well. Yes, it’s responsive.
+title: Escape Excel
+tag_text: Escape Excel
+description: a tool for preventing gene symbol and accession conversion errors
 
 # Build settings
 markdown: kramdown

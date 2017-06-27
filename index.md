@@ -1,7 +1,6 @@
 ---
 layout: default
 ---
-# Escape Excel
 ## a tool for preventing gene symbol and accession conversion errors
 
 ## Excel Plugin for Escape Excel
