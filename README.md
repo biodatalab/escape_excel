@@ -1,7 +1,7 @@
 # Escape Excel: a tool for preventing gene symbol and accession conversion errors
 
-## Escape Excel Plugin
-Download and run setupEscapeExcel.exe on windows to install the plugin. You can download the setup program under the releases tab.
+## Excel Plugin for Escape Excel
+Download and run setupEscapeExcel.exe on windows to install the plugin. You can download the latest version from [here](https://github.com/pstew/escape_excel/releases).
 
 ## Escape Excel on the Command Line
 
