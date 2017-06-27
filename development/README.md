@@ -3,6 +3,11 @@
 ## Escape Excel Plugin
 Download and run setupEscapeExcel.exe on windows to install the plugin. You can download the setup program under the releases tab.
 
+
+## Escape Excel Server
+To build the escape excel server, run make install. The all of the appropriate files
+will be packaged into the bin/server directory.
+
 ## Escape Excel on the Command Line
 
 ### Quick Start

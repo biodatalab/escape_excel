@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <title>Escape Excel</title>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link href="static/bootstrap/css/bootstrap.min.css" rel="stylesheet" />
+        <link href="static/index.css" rel="stylesheet" />
+    </head>
+    <body>
+        <div class="container">
+            <div class="center-block">
+                <div class="jumbotron">
+                    <h1 class="title">Escape Excel</h1>
+                    <p>Upload a file to run it through the escape_excel script</p>
+                    <div class="panel panel-default">
+                        <div class="panel-body">
+                            <form action="upload" method="POST" 
+                                    enctype="multipart/form-data"
+                                    class="form-hortizontal">
+                                <div class="form-group">
+                                    <div class="row">
+                                        <label for="file" class="col-sm-1 control-label">File</label>
+                                        <input type="file" name="file" class="file-input col-sm-11" />
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <div class="checkbox">
+                                        <label>
+                                            <input type="checkbox" name="no-dates" value="no-dates" />
+                                            Do not escape text that looks like dates
+                                        </label>
+                                    </div>
+                                     <div class="checkbox">
+                                        <label>
+                                            <input type="checkbox" name="no-sci" value="no-sci" />
+                                            Do not escape &gt; #E (ex: 12E4) or &gt;11 digit integer parts
+                                        </label>
+                                    </div>
+                                    <div class="checkbox">
+                                        <label>
+                                            <input type="checkbox" 
+                                                name="no-zeroes" value="no-zeroes" />
+                                            Do not escape leading zeroes (ie. 012345)
+                                        </label>
+                                    </div>
+                                    <div class="checkbox">
+                                        <label>
+                                            <input type="checkbox" value="paranoid" 
+                                                name="paranoid" />
+                                            Escape *ALL* non-numeric text
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <button class="btn btn-primary" type="submit">Submit</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <script src="static/jquery.min.js"></script>
+        <script src="static/bootstrap/js/bootstrap.min.js"></script>
+    </body>
+</html>

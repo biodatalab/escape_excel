@@ -5,6 +5,5 @@ install: eol2eol.c
 	cp -r ./server/ ./bin/server/server
 	cp ./server.js ./bin/server/server.js
 	cp escape_excel.pl ./bin/server
-	cd ./bin/server
-	npm install
-	cd ../..
+	cp package.json ./bin/server
+	cd ./bin/server && npm install
