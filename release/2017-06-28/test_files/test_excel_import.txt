@@ -1,0 +1,253 @@
+# First block should never be escaped, since they are valid Excel numbers.
+
+3.1415926535897
+-3.1415926535897
+3.14E99
+-3.14E-99
+0.12345
+0.12345E-99
+0.1234567890123456789
+1.
+1.E-99
+.12345
+.12345E-99
+.1234567890123456789
++.12345
+-.12345
++.12345E-99
+-.12345E-99
+1,234
+12,345
+123,456
+1,234,567
+12,345,678
+123,456,789
+1,234,567,890
+1234,567
+1234,567,8901
+1234,567,8901.E-99
+1234,567,8901.2E-99
+1
+12
+123
+1234
+12345
+123456
+1234567
+12345678
+123456789
+1234567890
+12345678901
+
+
+# Next block should only be escaped with --paranoid,
+# since they aren't numbers, and Excel doesn't try to treat them as non-text.
+
+,123,456
+1,235,6
+1,235,67
+6" 2'
+6" 2"
+O00116:347
+5710 266971
+05710 266971
+Nova-1
+19,Feb
+19,Feb
+19,Feb 2013
+19,Feb2013
+19,Feb,2013
+Feb,19
+Feb,19,2013
+1,08
+1,08,88
+1,08
+1,88
+December 1st
+December 2nd
+December 3rd
+December 4th
+December 1rd
+December 1st 2013
+December 1st, 2013
+December 1st, 13
+1st December
+1st December 2013
+3:00 long rambling junk in the middle Sep7
+filler at beginning 3:00 Sep7
+3:00 Sep7 filler at end
+3:00 x Sep7
+Sep7 x 3:00
+3:00 x Sep7
+3 AM x Sep7
+Sep7 x 3:00 AM
+3:00AM x 01/08
+3:00 AM x Sep7
+3:00 AM x 01/08
+01/08 x 3:00
+01/08 x 3:00 AM
+3:00 ; Sep7
+Sep7 ; 3:00
+3:00 ; Sep7
+3 AM ; Sep7
+Sep7 ; 3:00 AM
+3:00 AM ; Sep7
+3:00 AM ; 01/08
+01/08 ; 3:00
+01/08 ; 3:00 AM
+3:00 -- Sep7
+Sep7 -- 3:00
+3:00 -- Sep7
+3 AM -- Sep7
+Sep7 -- 3:00 AM
+3:00 AM -- Sep7
+3:00 AM -- 01/08
+01/08 -- 3:00
+01/08 -- 3:00 AM
+-
+--
+---
++
+++
++++
++
++-
+-+
++-+
+-+-
+
+
+# Everything below should be escaped, either because Excel does corrupt
+# them, or it looks suspiciously like something Excel might corrupt.
+00123456
+123456789012
+1234567890123
+12345678901234
+123456789012345
+1234567890123456
+12345678901234567
+123456789012345678
+1234567890123456789
+2310009E13
+SEP7
+April 31
+April 99
+19-Feb
+19Feb
+19Feb2013
+19-Feb2013
+19-Feb-2013
+Feb-19
+Feb-19-2013
+1-08
+1-08-88
+1/08
+1/08/88
+1-88
+1/88
+'night
+'1234
+'SEP7
+=1+2
+3:00
+3 P
+3 A
+3 PM
+3 AM
+3:00:00
+3:00:00 PM
+3:00:00 AM
+3:00:00 P
+3:00:00 A
+3:00 Sep7
+Sep7 3:00
+3:00Sep7
+3 AM Sep7
+Sep7 3:00 AM
+3:00 AM01/08
+3:00 AM Sep7
+3:00 AM 01/08
+01/08 3:00
+01/08 3:00 AM
+3:00  Sep7
+Sep7  3:00
+3:00  Sep7
+3 AM  Sep7
+Sep7  3:00 AM
+3:00 AM  Sep7
+3:00 AM  01/08
+01/08  3:00
+01/08  3:00 AM
+3:00/Sep7
+Sep7/3:00
+3:00/Sep7
+3 AM/Sep7
+Sep7/3:00 AM
+3:00 AM/Sep7
+3:00 AM/01/08
+01/08/3:00
+01/08/3:00 AM
+3:00-Sep7
+Sep7-3:00
+3:00-Sep7
+3 AM-Sep7
+Sep7-3:00 AM
+3:00 AM-Sep7
+3:00 AM-01/08
+01/08-3:00
+01/08-3:00 AM
+3:00,Sep7
+Sep7,3:00
+3:00,Sep7
+3 AM,Sep7
+Sep7,3:00 AM
+3:00 / Sep7
+Sep7 / 3:00
+3:00 / Sep7
+3 AM / Sep7
+Sep7 / 3:00 AM
+3:00 AM / Sep7
+3:00 AM / 01/08
+01/08 / 3:00
+01/08 / 3:00 AM
+3:00 - Sep7
+Sep7 - 3:00
+3:00 - Sep7
+3 AM - Sep7
+Sep7 - 3:00 AM
+3:00 AM - Sep7
+3:00 AM - 01/08
+01/08 - 3:00
+01/08 - 3:00 AM
+3:00 , Sep7
+Sep7 , 3:00
+3:00 , Sep7
+3 AM , Sep7
+Sep7 , 3:00 AM
+3:00 AM , Sep7
+3:00 AM , 01/08
+01/08 , 3:00
+01/08 , 3:00 AM
+-- sometext
+- sometext
+-sometext
+++ sometext
++ sometext
++sometext
+
+
+# Examples below are also test cases for stripping various characters from the
+# original input, such as leading/trailing spaces, equals sings,
+# enclosing double quotes, and nested occurances of these
+"SEP7
+"SEP7"
+""SEP7""
+Sep7 
+ Sep7
+="SEP7"
+="" =" ""SEP7"" " ""
+
+
+# This final example must be listed last, since it will cause Excel to
+# parse all lines after this line in "unexpected" ways
+"SEP7""
