@@ -1,4 +1,4 @@
-# First block should never be escaped, since they are valid Excel numbers
+# First block should never be escaped, since they are valid Excel numbers.
 
 3.1415926535897
 -3.1415926535897
@@ -41,7 +41,7 @@
 
 
 # Next block should only be escaped with --paranoid,
-# since they aren't numbers, and Excel doesn't try to treat them as non-text
+# since they aren't numbers, and Excel doesn't try to treat them as non-text.
 
 ,123,456
 1,235,6
@@ -118,8 +118,7 @@ Sep7 -- 3:00 AM
 
 
 # Everything below should be escaped, either because Excel does corrupt
-# them, or it looks suspiciously like something Excel might corrupt
-# and I am playing it safe.
+# them, or it looks suspiciously like something Excel might corrupt.
 00123456
 123456789012
 1234567890123
@@ -237,7 +236,7 @@ Sep7 , 3:00 AM
 +sometext
 
 
-# Example below are also test cases for stripping various characters from the
+# Examples below are also test cases for stripping various characters from the
 # original input, such as leading/trailing spaces, equals sings,
 # enclosing double quotes, and nested occurances of these
 "SEP7
