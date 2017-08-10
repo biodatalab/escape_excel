@@ -1,5 +1,8 @@
 # Escape Excel, a tool for preventing gene symbol and accession conversion errors
 
+## Escape Excel Web Server
+The quickest way to escape your data is to navigate to Escape Excel running on a simple web server at [http://apostl.moffitt.org:8000/](http://apostl.moffitt.org:8000/). Simply choose your file and click submit.
+
 ## Excel Plugin for Escape Excel
 Download and run setupEscapeExcel.exe on windows to install the plugin. You can download the latest version from inside the releases folder [here](https://github.com/pstew/escape_excel/tree/master/release).
 
@@ -72,7 +75,7 @@ This zip file contains a Mac application allowing for easy use of Escape Excel o
 	- Open the Escape Excel application to reveal a droplet for dropping files.
 - After dropping a file, newly escaped files will be created in the same directory.
 
-## Escape Excel Simple Web Server
+## Install the Escape Excel Simple Web Server
 
 Run make install to build the Escape Excel simple web server. The all of the appropriate files will be packaged into the bin/server directory.
 
