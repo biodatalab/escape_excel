@@ -28,6 +28,9 @@
 # OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 # ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+# v1.0 2017-01-27  initial public release on BioRxiv
+# v1.1 2017-06-26  PLOS ONE publication; a few minor bug fixes, better help
+# v1.2 2017-09-14  added --unstrip flag to restore stripped characters
 
 use Scalar::Util qw(looks_like_number);
 
@@ -52,6 +55,7 @@ sub print_usage_statement
     printf STDERR "      --no-dates   Do not escape text that looks like dates and/or times\n";
     printf STDERR "      --no-sci     Do not escape >= ##E (ex: 12E4) or >11 digit integer parts\n";
     printf STDERR "      --no-zeroes  Do not escape leading zeroes (ie. 012345)\n";
+    printf STDERR "      --unstrip    restore auto-stripped field when not escaped\n";
     printf STDERR "      --paranoid   Escape *ALL* non-numeric text (overrides --no-dates)\n";
     printf STDERR "                   WARNING -- Excel can take a LONG time to import\n";
     printf STDERR "                   text files where most fields are escaped.\n";
@@ -149,6 +153,7 @@ $escape_excel_paranoid_flag = 0;
 $escape_sci_flag = 1;
 $escape_zeroes_flag = 1;
 $escape_dates_flag = 1;
+$unstrip_flag = 0;
 
 # read in command line arguments
 $num_files = 0;
@@ -180,6 +185,10 @@ for ($i = 0; $i < @ARGV; $i++)
         elsif ($field eq '--no-dates')
         {
             $escape_dates_flag = 0;
+        }
+        elsif ($field eq '--unstrip')
+        {
+            $unstrip_flag = 1;
         }
         else
         {
@@ -282,6 +291,9 @@ while(defined($line=<INFILE>))
     
     for ($i = 0; $i < @array; $i++)
     {
+        $original_field      = $array[$i];
+        $needs_escaping_flag = 0;
+        
         # continue stripping problematic stuff until all has been stripped
         do
         {
@@ -319,12 +331,11 @@ while(defined($line=<INFILE>))
             {
                 $changed_flag = 1;
             }
-        } while ($changed_flag)
-    }
-    
-    # escape fields
-    for ($i = 0; $i < @array; $i++)
-    {
+        } while ($changed_flag);
+
+
+        # escape fields
+        #
         # Strange but true -- 'text doesn't escape text properly in Excel
         # when you try to use it in a text file to import.  It will not
         # auto-strip the leading ' like it does when you type it in a live
@@ -339,7 +350,7 @@ while(defined($line=<INFILE>))
           # keep leading zeroes for >1 digit before the decimal point
           if ($escape_zeroes_flag && $array[$i] =~ /^([+-]?)0[0-9]/)
           {
-              $array[$i] = sprintf "=\"%s\"", $array[$i];
+              $needs_escaping_flag = 1;
           }
 
           # Escape scientific notation with >= 2 digits before the E,
@@ -364,14 +375,14 @@ while(defined($line=<INFILE>))
               
               if ($temp =~ /^([1-9][0-9]{11,}|[0-9]{2,}[eE])/)
               {
-                  $array[$i] = sprintf "=\"%s\"", $array[$i];
+                  $needs_escaping_flag = 1;
               }
           }
         }
         # escape all text if paranoid
         elsif ($escape_excel_paranoid_flag)
         {
-          $array[$i] = sprintf "=\"%s\"", $array[$i];
+          $needs_escaping_flag = 1;
         }
         # escape only text that might be corrupted
         else
@@ -379,20 +390,20 @@ while(defined($line=<INFILE>))
           # escape single quote at beginning of line
           if ($array[$i] =~ /^'/)
           {
-              $array[$i] = sprintf "=\"%s\"", $array[$i];
+              $needs_escaping_flag = 1;
           }
 
           # prevent conversion into formulas
           elsif ($array[$i] =~ /^\=/)
           {
-              $array[$i] = sprintf "=\"%s\"", $array[$i];
+              $needs_escaping_flag = 1;
           }
           # Excel is smart enough to treat all +/- as not an equation
           #  but, otherwise, it will convert anything starting with +/-
           #  into "#NAME?" as a failed invalid equation
           elsif ($array[$i] =~ /^[+-]/ && !($array[$i] =~ /^[+-]+$/))
           {
-              $array[$i] = sprintf "=\"%s\"", $array[$i];
+              $needs_escaping_flag = 1;
           }
 
           # check for time and/or date stuff
@@ -489,7 +500,7 @@ while(defined($line=<INFILE>))
                           $middle =~ /^\s+$/ ||
                           $middle =~ /^\s*[-\/,]\s*$/)
                       {
-                          $array[$i] = sprintf "=\"%s\"", $array[$i];
+                          $needs_escaping_flag = 1;
                       }
                   }
               }
@@ -498,7 +509,7 @@ while(defined($line=<INFILE>))
               {
                   if ($array[$i] =~ /^\Q$time\E$/)
                   {
-                      $array[$i] = sprintf "=\"%s\"", $array[$i];
+                      $needs_escaping_flag = 1;
                   }
               }
               # only date
@@ -506,10 +517,19 @@ while(defined($line=<INFILE>))
               {
                   if ($array[$i] =~ /^\Q$date\E$/)
                   {
-                      $array[$i] = sprintf "=\"%s\"", $array[$i];
+                      $needs_escaping_flag = 1;
                   }
               }
           }
+        }
+        
+        if ($needs_escaping_flag)
+        {
+            $array[$i] = sprintf "=\"%s\"", $array[$i];
+        }
+        elsif ($unstrip_flag)
+        {
+            $array[$i] = $original_field;
         }
     }
     
