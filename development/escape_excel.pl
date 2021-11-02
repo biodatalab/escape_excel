@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w
 
-# Copyright (c) 2016, 2017 Eric A. Welsh. All Rights Reserved.
+# Copyright (c) 2016, 2017, 2018, 2019 Eric A. Welsh. All Rights Reserved.
 #
 # Escape Excel is distributed under the following BSD-style license:
 #
@@ -28,11 +28,21 @@
 # OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 # ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# v1.0 2017-01-27  initial public release on BioRxiv
-# v1.1 2017-06-26  PLOS ONE publication; a few minor bug fixes, better help
+# 2021-11-02  add --csv input comma-delimited file (still output tab-delimited)
+# 2020-09-25  do not strip empty fields from the ends of lines
+# 2019-05-20  fixed NNeXX reversion; looks like I broke escaping 2 digits before the decimal at some point
+# 2018-08-10  move decimal point so as not to trigger auto-format truncation to
+#             scientific notation with 2 digits after the decimal
 # v1.2 2017-09-14  added --unstrip flag to restore stripped characters
+# v1.1 2017-06-26  PLOS ONE publication; a few minor bug fixes, better help
+# v1.0 2017-01-27  initial public release on BioRxiv
+#
+# TODO: decide whether we should we escape dates such as "Sep 22, 2016",
+#       since that currently isn't checked for, but we may not care, since
+#       if it gets autoconverted into a date it really is a date anyways?
 
 use Scalar::Util qw(looks_like_number);
+use POSIX;
 
 $date_abbrev_hash{'jan'} = 'january';
 $date_abbrev_hash{'feb'} = 'february';
@@ -52,6 +62,7 @@ sub print_usage_statement
 {
     printf STDERR "Syntax: escape_excel.pl [options] tab_delimited_input.txt [output.txt]\n";
     printf STDERR "   Options:\n";
+    printf STDERR "      --csv        input CSV file instead of tab-delimited\n";
     printf STDERR "      --no-dates   Do not escape text that looks like dates and/or times\n";
     printf STDERR "      --no-sci     Do not escape >= ##E (ex: 12E4) or >11 digit integer parts\n";
     printf STDERR "      --no-zeroes  Do not escape leading zeroes (ie. 012345)\n";
@@ -83,7 +94,7 @@ sub is_number
     if (looks_like_number($_[0]))
     {
         # Perl treats infinities as numbers, Excel does not
-        if ($_[0] =~ /^[+-]*inf/)
+        if ($_[0] =~ /^[-+]*inf/)
         {
             return 0;
         }
@@ -103,7 +114,140 @@ sub is_number
     #  set to the US locale (my test environment).  I am going to leave this
     #  unsupported for now.
     #
-    return ($_[0] =~ /^([+-]?)([0-9]+(,[0-9]{3,})*\.?[0-9]*|\.[0-9]*)([Ee]([+-]?[0-9]+))?$/);
+    if ($_[0] =~ /^([-+]?)([0-9]+(,[0-9]{3,})*\.?[0-9]*|\.[0-9]*)([Ee]([-+]?[0-9]+))?$/)
+    {
+        # current REGEX can treat '.' as a number, check for that
+        if ($_[0] eq '.')
+        {
+            return 0;
+        }
+        
+        return 1;
+    }
+    
+    return 0;
+}
+
+
+sub csv2tsv_not_excel
+{
+    my $line = $_[0];
+    my $i;
+    my $n;
+    my @temp_array;
+
+    # placeholder strings unlikely to ever be encountered normally
+    #    my $tab = '___TaBChaR___';
+    #    my $dq  = '___DqUOteS___';
+    #
+    # https://stackoverflow.com/questions/8695118/whats-the-file-group-record-unit-separator-control-characters-and-its-usage#:~:text=30%20%E2%80%93%20RS%20%E2%80%93%20Record%20separator%20Within,units%20in%20the%20ASCII%20definition.
+    # interestingly, Microsoft Word appears to use 1E and 1F as
+    #  non-breaking and optional hyphen
+    #
+    # http://jkorpela.fi/chars/c0.html
+    #
+    # I'm going to use \x1A (substitute) for tab, since it is
+    #  "used in the place of a character that has been found to be invalid
+    #   or in error. SUB is intended to be introduced by automatic means",
+    #   and that is exactly how this function uses it.
+    #
+    # I'll use \x1D for "", since Word may use 1E and 1F internally,
+    #  and who knows if they may ever accidentally show up in exported files,
+    #  plus "group separator" seems somewhat appropriate, given that regular
+    #  double-quotes are used for "grouping".
+    #
+    my $tab = "\x1A";    # (substitute)      need single char for split regex
+    my $dq  = "\x1D";    # (group separator) seed single char for split regex
+    
+    # remove null characters, since I've only seen them randomly introduced
+    #  during NTFS glitches; "Null characters may be inserted into or removed
+    #  from a stream of data without affecting the information content of that
+    #  stream."
+    $line =~ s/\x00//g;
+    
+    # remove UTF8 byte order mark, since it corrupts the first field
+    # also remove some weird corruption of the UTF8 byte order mark (??)
+    #
+    # $line =~ s/^\xEF\xBB\xBF//;      # actual BOM
+    # $line =~ s/^\xEF\x3E\x3E\xBF//;  # corrupted BOM I have seen in the wild
+    $line =~ s/^(\xEF\xBB\xBF|\xEF\x3E\x3E\xBF)//;
+
+    # replace any (incredibly unlikely) instances of $dq with $tab
+    $line =~ s/$dq/$tab/g;
+    
+    # replace embedded tabs with placeholder string, to deal with better later
+    $line =~ s/\t/$tab/g;
+    
+    # HACK -- handle internal \r and \n the same way we handle tabs
+    $line =~ s/[\r\n]+(?!$)/$tab/g;
+    
+    # further escape ""
+    $line =~ s/""/$dq/g;
+
+    # only apply slow tab expansion to lines still containing quotes
+    if ($line =~ /"/)
+    {
+        # convert commas only if they are not within double quotes
+        # incrementing $i within array access for minor speed increase
+        #   requires initializing things to -2
+        @temp_array = split /((?<![^, $tab$dq])"[^\t"]+"(?![^, $tab$dq\r\n]))/, $line;
+        $n = @temp_array - 2;
+        for ($i = -2; $i < $n;)
+        {
+            $temp_array[$i += 2] =~ tr/,/\t/;
+        }
+        $line = join '', @temp_array;
+        
+        # slightly faster than split loop on rows with many quoted fields,
+        #  but *much* slower on lines containing very few quoted fields
+        # use split loop instead
+        #
+        # /e to evaluates code to handle different capture cases correctly
+        #$line =~ s/(,?)((?<![^, $tab$dq])"[^\t"]+"(?![^, $tab$dq\r\n]))|(,)/defined($3) ? "\t" : ((defined($1) && $1 ne '') ? "\t$2" : $2)/ge;
+    }
+    else
+    {
+        $line =~ tr/,/\t/;
+    }
+
+    # unescape ""
+    $line =~ s/$dq/""/g;
+
+    # finish dealing with embedded tabs
+    # remove tabs entirely, preserving surrounding whitespace
+    $line =~ s/(\s|^)($tab)+/$1/g;
+    $line =~ s/($tab)+(\s|$)/$2/g;
+    # replace remaining tabs with spaces so text doesn't abutt together
+    $line =~ s/($tab)+/ /g;
+
+    # Special case "" in a field by itself.
+    #
+    # This generally results from lazily-coded csv writers that enclose
+    #  every single field in "", even empty fields, whether they need them
+    #  or not.
+    #
+    # \K requires Perl >= v5.10.0 (2007-12-18)
+    #   (?: *)\K is faster than replacing ( *) with $1
+    $line =~ s/(?:(?<=\t)|^)(?: *)\K""( *)(?=\t)/$1/g;  # start|tabs "" tabs
+    $line =~    s/(?<=\t)(?: *)\K""( *)(?=\t|$)/$1/g;   # tabs  "" tabs|end
+    $line =~          s/^(?: *)\K""( *)$/$1/g;          # start "" end
+
+    # strip enclosing double-quotes, preserve leading/trailing spaces
+    #
+    # \K requires Perl >= v5.10.0 (2007-12-18)
+    #   (?: *)\K is faster than replacing ( *) with $1
+    #
+    #$line =~ s/(?:(?<=\t)|^)(?: *)\K"([^\t]+)"( *)(?=\t|[\r\n]*$)/$1$2/g;
+
+    # remove enclosing spaces, to support space-justified quoted fields
+    #   ( *) might be faster without () grouping, but left in for clarity
+    $line =~ s/(?:(?<=\t)|^)( *)"([^\t]+)"( *)(?=\t|[\r\n]*$)/$2/g;
+
+    # unescape escaped double-quotes
+    $line =~ s/""/"/g;
+
+    
+    return $line;
 }
 
 
@@ -149,6 +293,7 @@ sub has_text_month
     return 0;
 }
 
+$csv_flag = 0;
 $escape_excel_paranoid_flag = 0;
 $escape_sci_flag = 1;
 $escape_zeroes_flag = 1;
@@ -189,6 +334,10 @@ for ($i = 0; $i < @ARGV; $i++)
         elsif ($field eq '--unstrip')
         {
             $unstrip_flag = 1;
+        }
+        elsif ($field eq '--csv')
+        {
+            $csv_flag = 1;
         }
         else
         {
@@ -274,8 +423,15 @@ while(defined($line=<INFILE>))
 {
     # strip newline characters
     $line =~ s/[\r\n]+//g;
+    
+    # convert comma-delimited to tab-delimited
+    if ($csv_flag)
+    {
+        $line = csv2tsv_not_excel($line);
+    }
 
-    @array = split /\t/, $line;
+    # do NOT strip empty fields from the end of the line
+    @array = split /\t/, $line, -1;
 
     # Strip any leading UTF-8 byte order mark so it won't corrupt the
     #  first field, since regular Perl I/O is not byte order mark aware.
@@ -348,7 +504,7 @@ while(defined($line=<INFILE>))
         if (is_number($array[$i]))
         {
           # keep leading zeroes for >1 digit before the decimal point
-          if ($escape_zeroes_flag && $array[$i] =~ /^([+-]?)0[0-9]/)
+          if ($escape_zeroes_flag && $array[$i] =~ /^([-+]?)0[0-9]/)
           {
               $needs_escaping_flag = 1;
           }
@@ -356,7 +512,7 @@ while(defined($line=<INFILE>))
           # Escape scientific notation with >= 2 digits before the E,
           #  since they are likely accessions or plate/well identifiers.
           #
-          # Also escape numbers with >11 digits before the decimal point.
+          # Also escape whole numbers with >11 digits before the decimal.
           # >11 is when it displays scientific notation in General format,
           #  which can result in corruption when saved to text.
           # >15 would be the limit at which it loses precision internally.
@@ -372,10 +528,39 @@ while(defined($line=<INFILE>))
               # strip commas before counting digits
               $temp = $array[$i];
               $temp =~ s/\,//g;
+              $temp = abs($temp);
               
               if ($temp =~ /^([1-9][0-9]{11,}|[0-9]{2,}[eE])/)
               {
                   $needs_escaping_flag = 1;
+              }
+              elsif ($temp >= 1E11 &&
+                  !($temp =~ /^[-+]/) &&
+                  $temp - floor($temp + 0.5) == 0)
+              {
+                  # count number of significant digits
+                  $len = length $temp;
+                  $sigdigits = 0;
+                  $k = 0;
+                  for ($j = 0; $j < $len; $j++)
+                  {
+                      $c = substr $temp, $j, 1;
+                      
+                      if ($c ne '.')
+                      {
+                          $k++;
+                      }
+                      
+                      if ($c ne '0')
+                      {
+                          $sigdigits = $k + 1;
+                      }
+                  }
+                  
+                  if ($sigdigits >= 11)
+                  {
+                      $needs_escaping_flag = 1;
+                  }
               }
           }
         }
@@ -401,7 +586,7 @@ while(defined($line=<INFILE>))
           # Excel is smart enough to treat all +/- as not an equation
           #  but, otherwise, it will convert anything starting with +/-
           #  into "#NAME?" as a failed invalid equation
-          elsif ($array[$i] =~ /^[+-]/ && !($array[$i] =~ /^[+-]+$/))
+          elsif ($array[$i] =~ /^[-+]/ && !($array[$i] =~ /^[-+]+$/))
           {
               $needs_escaping_flag = 1;
           }
@@ -521,6 +706,65 @@ while(defined($line=<INFILE>))
                   }
               }
           }
+        }
+        
+        # n.nnEn, nn.nEn, etc.
+        #
+        # If it looks like scientific notation, Excel will automatically
+        #  format it as scientific notation.  However, if the magnitude is
+        #  > 1E7, it will also automatically display it set to only 2 digits
+        #  to the right of the decimal (it is still fine internally).  If the
+        #  file is re-exported to text, truncation to 3 significant digits
+        #  will occur!!!
+        #
+        # Reformat the number to (mostly) avoid this behavior.
+        #
+        # Unfortunately, the >= 11 significant digits behavior still
+        #  triggers, so it still truncates to 10 digits when re-exporting
+        #  General format.  10 digits is still better than 3....
+        #
+        # The re-export truncation behavior can only be more fully avoided by
+        #  manually setting the format to Numeric and specifying a large
+        #  number of digits after the decimal place for numbers with
+        #  fractions, or 0 digits after the decimal for whole numbers.
+        #
+        # Ugh.
+        #
+        # There is no fully fixing this brain-damagedness automatically,
+        #  I can only decrease the automatic truncation of significant
+        #  digits from 3 to 10 digits :(  Any precision beyond 10 digits
+        #  *WILL* be lost on re-export if the format is set to General.
+        #
+        # NOTE -- We truncate to 16 significant digits by going through
+        #         a standard IEEE double precision intermediate.
+        #         However, Excel imports numbers as double precision
+        #         anyways, so we aren't losing any precision that Excel
+        #         wouldn't already be discarding.
+        #
+        if ($needs_escaping_flag == 0 && is_number($array[$i]))
+        {
+              # strip commas
+              $temp = $array[$i];
+              $temp =~ s/\,//g;
+              
+              if (abs($temp) >= 1 &&
+                  $temp =~ /^([-+]?[0-9]*\.*[0-9]*)[Ee]([-+]?[0-9]+)$/)
+              {
+#                  $number   = $1 + 0;
+#                  $exponent = $2 + 0;
+                  
+                  $temp /= 1;
+                  
+                  # overwrite saved unstripped version, if it wasn't stripped
+                  if ($unstrip_flag &&
+                      $array[$i] eq $original_field)
+                  {
+                      $original_field = $temp;
+                  }
+
+                  # replace original with new scientific notation format
+                  $array[$i] = $temp;
+              }
         }
         
         if ($needs_escaping_flag)
