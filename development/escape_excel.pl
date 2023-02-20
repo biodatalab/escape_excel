@@ -28,6 +28,7 @@
 # OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 # ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+# 2023-02-20  add this comment line so I can update the commit date in git
 # 2021-11-02  add --csv input comma-delimited file (still output tab-delimited)
 # 2020-09-25  do not strip empty fields from the ends of lines
 # 2019-05-20  fixed NNeXX reversion; looks like I broke escaping 2 digits before the decimal at some point
