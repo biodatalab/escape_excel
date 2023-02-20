@@ -1,5 +1,10 @@
 # First block should never be escaped, since they are valid Excel numbers.
 
+1.23456789E7
+-1.23456789E7
+0.00999999E6
+-0.00999999E6
+
 3.1415926535897
 -3.1415926535897
 3.14E99
