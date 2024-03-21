@@ -7,19 +7,19 @@
 <pre>
 Usage: escape_excel.pl [options] tab_delimited_input.txt [output.txt]
    Options:
-      --all-commas Escale *ALL* numeric-looking fields with commas in them
-      --csv        input CSV file instead of tab-delimited, still outputs tsv
-      --escape-dq  "smart" escaping of " to better preserve them (default)
-      --no-commas  Do not escape ,#### and ####,###
-      --no-dates   Do not escape text that looks like dates and/or times
-      --no-dq      Disable "smart" handling of double quotes
-      --no-sci     Do not escape >= ##E (ex: 12E4) or >11 digit integer parts
-      --no-zeroes  Do not escape leading zeroes (ie. 012345)
-      --unstrip    restore auto-stripped field when not escaped
-      --paranoid   Escape *ALL* non-numeric text (overrides --no-dates)
-                   WARNING -- Excel can take a LONG time to import
-                   text files where most fields are escaped.
-                   Copy / Paste Values can become near unusuable....
+      --all-commas  Escape *ALL* numeric-looking fields with commas in them
+      --csv         input CSV file instead of tab-delimited, still outputs tsv
+      --escape-dq   "smart" escaping of " to better preserve them (default)
+      --no-commas   Do not escape ,#### and ####,###
+      --no-dates    Do not escape text that looks like dates and/or times
+      --no-dq       Disable "smart" handling of double quotes
+      --no-sci      Do not escape >= ##E (ex: 12E4) or >11 digit integer parts
+      --no-zeroes   Do not escape leading zeroes (ie. 012345)
+      --unstrip     restore auto-stripped field when not escaped
+      --paranoid    Escape *ALL* non-numeric text (overrides --no-dates)
+                    WARNING -- Excel can take a LONG time to import
+                    text files where most fields are escaped.
+                    Copy / Paste Values can become near unusuable....
 
    Reads input from STDIN if input file name is - or no file name is given.
    Input file must be tab-delimited.
