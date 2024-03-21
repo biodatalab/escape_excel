@@ -1,12 +1,6 @@
-# Escape Excel, a tool for preventing gene symbol and accession conversion
-errors
-
-<BR>
+# Escape Excel, a tool for preventing gene symbol and accession conversion errors
 
 ## Escape Excel Perl script on the Command Line
-
-<BR>
-
 
 ### Quick Start
 
@@ -43,7 +37,6 @@ Usage: escape_excel.pl [options] tab_delimited_input.txt [output.txt]
 
 Use the provided text file (`test_excel_import.txt`) to test the script.
 
-<BR>
 
 
 ### Tutorial
@@ -72,7 +65,6 @@ The syntax for using Escape Excel can be found above in the quick start guide.
 The usage statement will be displayed with the --help option, or any other
 invalid option.
 
-<BR>
 
 
 ## Escape Excel Windows .exe file
@@ -82,22 +74,15 @@ You can, however, generate your own .exe file from escape\_excel.pl using
 PAR Packager (`pp`): https://metacpan.org/pod/pp
 
 
-<BR>
 
 ## Escape Excel MacOS App
 This is no longer supported, updated, or otherwise maintained.
 
-<BR>
-
 ## Escape Excel Web Server
 This is no longer supported, updated, or otherwise maintained.
 
-<BR>
-
 ## Escape Excel on Galaxy
 This is no longer supported, updated, or otherwise maintained.
-
-<BR>
 
 ## Excel Plugin for Escape Excel
 This is no longer supported, updated, or otherwise maintained.
