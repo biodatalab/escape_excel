@@ -28,6 +28,8 @@
 # OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 # ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+# 2024-03-21  add --no-commas and --all-commas flags for numeric commas
+# 2024-03-21  escape ,#### and ####,### since Excel sees them as numbers
 # 2024-03-21  treat spaces after enclosing "" as part of the enclosing ""
 # 2024-03-21  only strip ="" if first or immediately inside previous =""
 # 2024-03-20  improved handling of double quotes, new double quote options
@@ -71,8 +73,10 @@ sub print_usage_statement
 
     printf STDERR "Usage: $program_name [options] tab_delimited_input.txt [output.txt]\n";
     printf STDERR "   Options:\n";
+    printf STDERR "      --all-commas Escale *ALL* numeric-looking fields with commas in them\n";
     printf STDERR "      --csv        input CSV file instead of tab-delimited, still outputs tsv\n";
     printf STDERR "      --escape-dq  \"smart\" escaping of \" to better preserve them (default)\n";
+    printf STDERR "      --no-commas  Do not escape ,#### and ####,###\n";
     printf STDERR "      --no-dates   Do not escape text that looks like dates and/or times\n";
     printf STDERR "      --no-dq      Disable \"smart\" handling of double quotes\n";
     printf STDERR "      --no-sci     Do not escape >= ##E (ex: 12E4) or >11 digit integer parts\n";
@@ -304,6 +308,8 @@ $opt_escape_zeroes         = 1;
 $opt_escape_dates          = 1;
 $opt_escape_dq             = 1;
 $opt_unstrip               = 0;
+$opt_some_commas           = 1;
+$opt_all_commas            = 0;
 
 # read in command line arguments
 $num_files = 0;
@@ -343,6 +349,15 @@ for ($i = 0; $i < @ARGV; $i++)
         elsif ($field eq '--escape-dq')
         {
             $opt_escape_dq = 1;
+        }
+        elsif ($field eq '--no-commas')
+        {
+            $opt_all_commas  = 0;
+            $opt_some_commas = 0;
+        }
+        elsif ($field eq '--all-commas')
+        {
+            $opt_all_commas  = 1;
         }
         elsif ($field eq '--unstrip')
         {
@@ -464,6 +479,7 @@ while(defined($line=<INFILE>))
         $needs_escaping_flag = 0;
         $was_enclosed_flag   = 0;
         $last_strip_rule     = '';
+        $looks_like_a_number = 0;
 
         # NOTE -- Decide how best to handle ""
         #         Do we treat it as 2 double-quotes, or as an empty field?
@@ -521,9 +537,11 @@ while(defined($line=<INFILE>))
         # but an equation containing just a text string and no actual
         # equation doesn't make much sense.  However, it works, so that's
         # what I use here to escape fields into mangle-protected text.
+        
+        $looks_like_a_number = is_number($array[$i]);
 
         # escape numeric problems
-        if (is_number($array[$i]))
+        if ($looks_like_a_number)
         {
           # keep leading zeroes for >1 digit before the decimal point
           if ($opt_escape_zeroes && $array[$i] =~ /^([-+]?)0[0-9]/)
@@ -763,7 +781,7 @@ while(defined($line=<INFILE>))
         #         anyways, so we aren't losing any precision that Excel
         #         wouldn't already be discarding.
         #
-        if ($needs_escaping_flag == 0 && is_number($array[$i]))
+        if ($needs_escaping_flag == 0 && $looks_like_a_number)
         {
               # strip commas
               $temp = $array[$i];
@@ -787,6 +805,30 @@ while(defined($line=<INFILE>))
                   # replace original with new scientific notation format
                   $array[$i] = $temp;
               }
+        }
+        
+        
+        # Commas in the wrong place that Excel still treats as numbers
+        #
+        # Example: 1234,5678
+        #
+        if ($needs_escaping_flag == 0 && $looks_like_a_number)
+        {
+            # escape all numbers with commas in them
+            if ($opt_all_commas)
+            {
+                if ($array[$i] =~ /\,/)
+                {
+                    $needs_escaping_flag = 1;
+                }
+            }
+            elsif ($opt_some_commas &&
+                   !($array[$i] =~ /\,[0-9]{0,2}\,/) &&
+                   ($array[$i] =~ /\,[0-9]{4,}/ ||
+                    $array[$i] =~ /[0-9]{4,}\,[0-9]{3}/))
+            {
+                $needs_escaping_flag = 1;
+            }
         }
 
 
