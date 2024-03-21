@@ -122,6 +122,28 @@ Sep7 -- 3:00 AM
 -+-
 
 
+
+# Excel doesn't see these as numbers, so they are OK to leave as-is
+1,2
+12,34
+12,34,56
+123,4
+123,45
+1,2,3,4567
+12,3456,78
+12,34,5678,9
+
+# Excel sees these as numbers, so they need to be escaped
+12,3456
+1234,567
+1234,5678
+12345,67890
+
+# these should already be caught by the big number check
+123,456,789,012,345
+1234,5678,9012,3456
+
+
 # Excel has some odd spacing related parsing behavior
  SEP7
 SEP7 	space at end is treated as date by Excel
