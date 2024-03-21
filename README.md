@@ -7,8 +7,10 @@
 <pre>
 Usage: escape_excel.pl [options] tab_delimited_input.txt [output.txt]
    Options:
+      --all-commas Escale *ALL* numeric-looking fields with commas in them
       --csv        input CSV file instead of tab-delimited, still outputs tsv
       --escape-dq  "smart" escaping of " to better preserve them (default)
+      --no-commas  Do not escape ,#### and ####,###
       --no-dates   Do not escape text that looks like dates and/or times
       --no-dq      Disable "smart" handling of double quotes
       --no-sci     Do not escape >= ##E (ex: 12E4) or >11 digit integer parts
