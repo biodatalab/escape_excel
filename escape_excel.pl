@@ -28,6 +28,7 @@
 # OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 # ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+# 2025-03-12  do not alter fields > 8189 in width
 # 2024-03-21  add --no-commas and --all-commas flags for numeric commas
 # 2024-03-21  escape ,#### and ####,### since Excel sees them as numbers
 # 2024-03-21  treat spaces after enclosing "" as part of the enclosing ""
@@ -480,6 +481,15 @@ while(defined($line=<INFILE>))
         $was_enclosed_flag   = 0;
         $last_strip_rule     = '';
         $looks_like_a_number = 0;
+        
+        # skip fields > 8189 in length,
+        # since we can't use formuals to escape them,
+        # since max formula length is 8192
+        if (length $array[$i] > 8189)
+        {
+            next;
+        }
+        
 
         # NOTE -- Decide how best to handle ""
         #         Do we treat it as 2 double-quotes, or as an empty field?
@@ -901,6 +911,12 @@ while(defined($line=<INFILE>))
             elsif ($count_dq1 && $was_enclosed_flag && $opt_unstrip == 0)
             {
                 $array[$i] =  sprintf "\"%s\"", $array[$i];
+            }
+            
+            # restore original field if too wide for formula
+            if (length $array[$i] > 8192)
+            {
+                $array[$i] = $original_field;
             }
         }
     }
