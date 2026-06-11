@@ -28,6 +28,7 @@
 # OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 # ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+# 2026-06-11  some scientific notation related bug fixes
 # 2025-03-12  do not alter fields > 8189 in width
 # 2024-03-21  add --no-commas and --all-commas flags for numeric commas
 # 2024-03-21  escape ,#### and ####,### since Excel sees them as numbers
@@ -578,9 +579,9 @@ while(defined($line=<INFILE>))
               # strip commas before counting digits
               $temp = $array[$i];
               $temp =~ s/\,//g;
-              $temp = abs($temp);
-              
-              if ($temp =~ /^([1-9][0-9]{11,}|[0-9]{2,}[eE])/)
+              $temp =~ s/^-//;    # do not take abs(), that converts to #
+
+              if ($temp =~ /(^[1-9][0-9]{11,}|[0-9]{2,}(.[0-9]*)*[eE])/)
               {
                   $needs_escaping_flag = 1;
               }
