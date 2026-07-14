@@ -2,6 +2,27 @@
 
 ## Escape Excel Perl script on the Command Line
 
+
+UPDATE -- 2026-07-14
+
+A new and improved native Excel AddIn implementation of the protect-as-text
+rules of Escape Excel, which should work on both PC and Mac, is now available
+at:  https://github.com/welshea/excel_export_as_text.
+
+Functions are provided, along with instructions for how to add icons to the
+Quick Access Toolbar to launch them, for both safely exporting and safely
+importing text files into / out of Excel.  This entirely replaces the previous
+long-deprecated Excel AddIn included with the 2017 publication
+(https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0185207).
+
+The AddIn defaults to a few additional options not currently supported by
+Escape Excel, such as protection of single-digit plate/well numbers that look
+like scientific notation, and treating any numeric string containing commas as
+text.  I (Eric.Welsh@moffitt.org) plan to eventually back-port these options
+to escape_excel.pl, but do not currently have time to do so.
+
+
+
 ### Quick Start
 
 <pre>
