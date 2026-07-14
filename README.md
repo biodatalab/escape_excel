@@ -1,8 +1,5 @@
 # Escape Excel, a tool for preventing gene symbol and accession conversion errors
 
-## Escape Excel Perl script on the Command Line
-
-
 UPDATE -- 2026-07-14
 
 A new and improved native Excel AddIn implementation of the protect-as-text
@@ -22,6 +19,8 @@ text.  I (Eric.Welsh@moffitt.org) plan to eventually back-port these options
 to escape_excel.pl, but do not currently have time to do so.
 
 
+
+## Escape Excel Perl script on the Command Line
 
 ### Quick Start
 
