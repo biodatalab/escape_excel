@@ -28,6 +28,10 @@
 # OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 # ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+# 2026-07-17  default to --all-commas to match OpenAsUTF8Strict() behavior
+# 2026-07-17  add --some-commas flag
+# 2026-07-17  add default #E# rule and --no-sci-1 flag to disable it
+# 2026-06-24  improve big whole number and scientific notation escaping
 # 2026-06-11  bugfix to previous bugfix
 # 2026-06-11  some scientific notation related bug fixes
 # 2025-03-12  do not alter fields > 8189 in width
@@ -76,13 +80,17 @@ sub print_usage_statement
 
     printf STDERR "Usage: $program_name [options] tab_delimited_input.txt [output.txt]\n";
     printf STDERR "   Options:\n";
-    printf STDERR "      --all-commas  Escape *ALL* numeric-looking fields with commas in them\n";
+    printf STDERR "      --all-commas  Escape all numbers containing commas as text (default)\n";
+    printf STDERR "      --some-commas Escape ,#### and ####,### as text (previous default)\n";
+    printf STDERR "      --no-commas   Do not escape any numbers containing commas\n";
+    printf STDERR "\n";
     printf STDERR "      --csv         input CSV file instead of tab-delimited, still outputs tsv\n";
     printf STDERR "      --escape-dq   \"smart\" escaping of \" to better preserve them (default)\n";
-    printf STDERR "      --no-commas   Do not escape ,#### and ####,###\n";
     printf STDERR "      --no-dates    Do not escape text that looks like dates and/or times\n";
     printf STDERR "      --no-dq       Disable \"smart\" handling of double quotes\n";
-    printf STDERR "      --no-sci      Do not escape >= ##E (ex: 12E4) or >11 digit integer parts\n";
+    printf STDERR "      --no-sci      Do not escape >= ##E# (ex: 12E4) or >11 digit integer parts\n";
+    printf STDERR "                    also disables #E# escaping\n";
+    printf STDERR "      --no-sci-1    Do not escape #E# (ex: 2E4)\n";
     printf STDERR "      --no-zeroes   Do not escape leading zeroes (ie. 012345)\n";
     printf STDERR "      --unstrip     restore auto-stripped field when not escaped\n";
     printf STDERR "      --paranoid    Escape *ALL* non-numeric text (overrides --no-dates)\n";
@@ -307,12 +315,13 @@ sub has_text_month
 $opt_csv = 0;
 $opt_escape_excel_paranoid = 0;
 $opt_escape_sci            = 1;
+$opt_escape_sci_single     = 1;
 $opt_escape_zeroes         = 1;
 $opt_escape_dates          = 1;
 $opt_escape_dq             = 1;
 $opt_unstrip               = 0;
-$opt_some_commas           = 1;
-$opt_all_commas            = 0;
+$opt_some_commas           = 0;
+$opt_all_commas            = 1;
 
 # read in command line arguments
 $num_files = 0;
@@ -336,6 +345,11 @@ for ($i = 0; $i < @ARGV; $i++)
         elsif ($field eq '--no-sci')
         {
             $opt_escape_sci = 0;
+            $opt_escape_sci_single = 0;
+        }
+        elsif ($field eq '--no-sci-1')
+        {
+            $opt_escape_sci_single = 0;
         }
         elsif ($field eq '--no-zeroes')
         {
@@ -353,14 +367,19 @@ for ($i = 0; $i < @ARGV; $i++)
         {
             $opt_escape_dq = 1;
         }
+        elsif ($field eq '--all-commas')
+        {
+            $opt_all_commas  = 1;
+        }
+        elsif ($field eq '--some-commas')
+        {
+            $opt_all_commas  = 0;
+            $opt_some_commas = 1;
+        }
         elsif ($field eq '--no-commas')
         {
             $opt_all_commas  = 0;
             $opt_some_commas = 0;
-        }
-        elsif ($field eq '--all-commas')
-        {
-            $opt_all_commas  = 1;
         }
         elsif ($field eq '--unstrip')
         {
@@ -582,36 +601,50 @@ while(defined($line=<INFILE>))
               $temp =~ s/\,//g;
               $temp =~ s/^-//;    # do not take abs(), that converts to #
 
-              if ($temp =~ /^([1-9][0-9]{11,}|[0-9]{2,}(.[0-9]*)*[eE])/)
+              # only apply to whole numbers with no decimal point
+              # also ignore anything with a sign in front of it
+              # or anything with a sign after the exponent
+              if ($temp - floor($temp + 0.5) == 0 &&
+                  !($array[$i] =~ /^[-+]/) &&
+                  !($array[$i] =~ /\./) &&
+                  !($array[$i] =~ /E[+-]/i))
               {
-                  $needs_escaping_flag = 1;
-              }
-              elsif ($temp >= 1E11 &&
-                  !($temp =~ /^[-+]/) &&
-                  $temp - floor($temp + 0.5) == 0)
-              {
-                  # count number of significant digits
-                  $len = length $temp;
-                  $sigdigits = 0;
-                  $k = 0;
-                  for ($j = 0; $j < $len; $j++)
-                  {
-                      $c = substr $temp, $j, 1;
-                      
-                      if ($c ne '.')
-                      {
-                          $k++;
-                      }
-                      
-                      if ($c ne '0')
-                      {
-                          $sigdigits = $k + 1;
-                      }
-                  }
-                  
-                  if ($sigdigits >= 11)
+                  # big numbers that are more likely barcodes
+                  # plate/wells with E at the end
+                  if ($temp =~ /^([1-9][0-9]{11,}|[0-9]{2,}(.[0-9]*)*[eE])/)
                   {
                       $needs_escaping_flag = 1;
+                  }
+                  elsif ($opt_escape_sci_single && $temp =~ /^[0-9][eE]/)
+                  {
+                      $needs_escaping_flag = 1;
+                  }
+                  # big numbers
+                  elsif ($temp >= 1E11)
+                  {
+                      # count number of significant digits
+                      $len = length $temp;
+                      $sigdigits = 0;
+                      $k = 0;
+                      for ($j = 0; $j < $len; $j++)
+                      {
+                          $c = substr $temp, $j, 1;
+                          
+                          if ($c ne '.')
+                          {
+                              $k++;
+                          }
+                          
+                          if ($c ne '0')
+                          {
+                              $sigdigits = $k + 1;
+                          }
+                      }
+                      
+                      if ($sigdigits >= 11)
+                      {
+                          $needs_escaping_flag = 1;
+                      }
                   }
               }
           }
@@ -806,6 +839,28 @@ while(defined($line=<INFILE>))
                   #$exponent = $2 + 0;
                   
                   $temp /= 1;
+                  
+                  # add a decimal place to whole numbers,
+                  # for better OpenAsUTF8Strict() compatability
+                  #
+                  # adding a .0 to the end of big numbers causes Excel to
+                  # auto-format and save with 7 digits of precision instead of
+                  # full
+                  #
+                  # disable for now, until I can come up with a better fix
+                  if (0 && abs($temp) < 1.0E11 && !($temp =~ /\./))
+                  {
+                      # there shouldn't still be an E
+                      if (!($temp =~ /E/i))
+                      {
+                          $temp = $temp . ".0";
+                      }
+                      # fallback code, in case there unexpected is an E
+                      else
+                      {
+                          $temp =~ s/(E)/.0$1/i;
+                      }
+                  }
                   
                   # overwrite saved unstripped version, if it wasn't stripped
                   if ($opt_unstrip &&
