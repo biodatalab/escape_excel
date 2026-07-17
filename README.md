@@ -12,12 +12,6 @@ importing text files into / out of Excel.  This entirely replaces the previous
 long-deprecated Excel AddIn included with the 2017 publication
 (https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0185207).
 
-The AddIn defaults to a few additional options not currently supported by
-Escape Excel, such as protection of single-digit plate/well numbers that look
-like scientific notation, and treating any numeric string containing commas as
-text.  I (Eric.Welsh@moffitt.org) plan to eventually back-port these options
-to escape_excel.pl, but do not currently have time to do so.
-
 
 
 ## Escape Excel Perl script on the Command Line
