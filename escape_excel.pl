@@ -105,8 +105,7 @@ sub print_usage_statement
     printf STDERR "\n";
     printf STDERR "   Defaults to escaping most Excel mis-imported fields.\n";
     printf STDERR "   Escapes a few extra date-like formats that Excel does not consider dates.\n";
-    printf STDERR "   Please send unhandled mis-imported field examples (other than gene symbols\n";
-    printf STDERR "    with 1-digit scientific notation, such as 2e4) to Eric.Welsh\@moffitt.org.\n";
+    printf STDERR "   Please send unhandled mis-imported field examples to Eric.Welsh\@moffitt.org.\n";
     printf STDERR "\n";
     printf STDERR "   Does not currently support or detect line wraps.  To best preserve line\n";
     printf STDERR "   wraps, use --no-dq and enable --unstrip to better preserve spacing.\n";
